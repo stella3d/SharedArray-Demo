@@ -1,16 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class InstanceMeshDrawer : MonoBehaviour
 {
-    [Range(0, 1023 * 32)]
+    [Range(0, 1023 * 16)]
     public int Count;
     
     public Material Material;
     public Mesh Mesh;
 
-    public Matrix4x4[][] Matrices;
+    public ManagedNativeArray<Matrix4x4>[] Matrices;
     public Color[][] Colors;
     
     static readonly int ColorShaderProperty = Shader.PropertyToID("_Color");
@@ -32,14 +36,16 @@ public class InstanceMeshDrawer : MonoBehaviour
 
         var batchCount = remainder == 0 ? wholeBatchCount : wholeBatchCount + 1;
 
-        Matrices = new Matrix4x4[batchCount][];
+        Matrices = new ManagedNativeArray<Matrix4x4>[batchCount];
         Colors = new Color[batchCount][];
         
         m_PropertyBlocks = new MaterialPropertyBlock[batchCount];
         
+        m_Handles = new NativeArray<JobHandle>(batchCount, Allocator.Persistent);
+        
         for (int i = 0; i < wholeBatchCount; i++)
         {
-            Matrices[i] = RandomMatrices(1023, 8f + i * 2f);
+            Matrices[i] = new ManagedNativeArray<Matrix4x4>(RandomMatrices(1023, 8f + i * 2f));
             var colors = RandomColors(1023);
             Colors[i] = colors;
             
@@ -50,7 +56,7 @@ public class InstanceMeshDrawer : MonoBehaviour
         if(remainder != 0)
         {
             var index = batchCount - 1;
-            Matrices[index] = RandomMatrices(remainder);
+            Matrices[index] = new ManagedNativeArray<Matrix4x4>(RandomMatrices(remainder, (wholeBatchCount + 1) * 2f + 8f));
             var colors = RandomColors(remainder);
             Colors[index] = colors;
             
@@ -59,13 +65,35 @@ public class InstanceMeshDrawer : MonoBehaviour
         }
     }
 
+    JobHandle m_Handle;
+
+    NativeArray<JobHandle> m_Handles;
+
     void Update()
     {
+        m_Handle.Complete();
+
+        // draw
         for (int i = 0; i < m_PropertyBlocks.Length; i++)
         {
             var matrices = Matrices[i];
             Graphics.DrawMeshInstanced(Mesh, 0, Material, matrices, matrices.Length, m_PropertyBlocks[i]);
         }
+        
+        // schedule movement update jobs
+        for (int i = 0; i < m_PropertyBlocks.Length; i++)
+        {
+            var array = Matrices[i];
+            var job = new ExampleNoiseJob
+            {
+                Matrices = array, 
+                SinTime = 0.005f * math.sin(Time.time)
+            };
+            var handle = job.Schedule(array.Length, array.Length, m_Handle);
+            m_Handles[i] = handle;
+        }
+
+        m_Handle = JobHandle.CombineDependencies(m_Handles);
     }
 
     static Vector4[] FromColors(Color[] colors)
