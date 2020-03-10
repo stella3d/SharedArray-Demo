@@ -2,23 +2,28 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
 [BurstCompile]
-public struct ExampleNoiseJob : IJobParallelFor
+public struct ExampleNoiseJob : IJobFor, IJobParallelFor
 {
-    public NativeArray<Matrix4x4> Matrices;
+    public NativeArray<float4x4> Matrices;
 
     public float SinTime;
-    
+    public float NoiseScale;
+
+    public ExampleNoiseJob(NativeArray<float4x4> matrices, float sinTime, float noiseScale)
+    {
+        Matrices = matrices;
+        SinTime = sinTime;
+        NoiseScale = noiseScale;
+    }
+
     public void Execute(int i)
     {
         var m = Matrices[i];
-        var p = new float3((Vector3) m.GetColumn(3));
-        var n = noise.psrdnoise(p.xy, p.yz) * 10f;
-        var l = math.lerp(p, n, SinTime);
-        Vector4 newP = new Vector4(l.x, l.y, l.z, 1f);
-        m.SetColumn(3, newP);
+        var mc = m.c3;
+        var n = new float4(noise.srdnoise(mc.xy, mc.z) * NoiseScale, mc.w);
+        m.c3 = math.lerp(mc, n, SinTime);
         Matrices[i] = m;
     }
 }

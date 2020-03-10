@@ -150,7 +150,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da6df4c7f76d1cf45a6070890ec1a7e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Count: 4092
+  InstanceCount: 4092
+  NoiseScale: 20.9
+  DistanceScale: 0.006
+  ColorScale: 0.00313
+  CycleTimeScale: 0.25
   Material: {fileID: 2100000, guid: 43bfaaca72a44d6429f99328bfa2c16a, type: 2}
   Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!4 &128109830
@@ -335,8 +339,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 137.8}
+  m_LocalRotation: {x: -0.10356401, y: 0.7375167, z: -0.11622711, w: -0.65714145}
+  m_LocalPosition: {x: 52.696106, y: 16.922379, z: 6.041374}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

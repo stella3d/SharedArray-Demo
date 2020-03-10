@@ -13,7 +13,7 @@ Shader "Custom/InstancedColorSurfaceShader" {
         }
         LOD 200
         CGPROGRAM
-        // Physically based Standard lighting model
+        // Physically based Standard lighting model, and enable shadows on all light types
         #pragma surface surf Standard
         // Use Shader model 3.0 target
         #pragma target 3.0
