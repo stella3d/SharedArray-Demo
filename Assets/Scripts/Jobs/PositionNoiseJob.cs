@@ -5,16 +5,15 @@ using Unity.Mathematics;
 
 namespace Stella3D.SharedArray.Demo
 {
-    
     [BurstCompile]
-    public struct ExampleNoiseJob : IJobFor, IJobParallelFor
+    public struct PositionNoiseJob : IJobFor, IJobParallelFor
     {
         public NativeArray<float4x4> Matrices;
 
         public float SinTime;
         public float NoiseScale;
 
-        public ExampleNoiseJob(NativeArray<float4x4> matrices, float sinTime, float noiseScale)
+        public PositionNoiseJob(NativeArray<float4x4> matrices, float sinTime, float noiseScale)
         {
             Matrices = matrices;
             SinTime = sinTime;
