@@ -55,7 +55,7 @@ namespace Stella3D.SharedArray.Demo
         public float DistanceScale = 0.5f;
         
         [Tooltip("Affects how much effect the color shifting has")]
-        [Range(0.5f, 3f)]
+        [Range(0.2f, 2f)]
         public float ColorScale = 1f;
         
         [Tooltip("Affects how fast the time cycle goes by")]
@@ -65,12 +65,16 @@ namespace Stella3D.SharedArray.Demo
         const int instanceBatchSize = 1023;
         static readonly int ColorShaderProperty = Shader.PropertyToID("_Color");
         static readonly ProfilerMarker DrawProfileMarker = new ProfilerMarker("Draw Mesh Instanced");
-
-        float m_CycleTimeMultiplier;
-        float m_PreviousCycleTimeScale;
-        
+                
         JobHandle m_JobHandle;
         NativeArray<JobHandle> m_Handles;
+        
+        float m_CycleTimeMultiplier;
+        float m_PreviousCycleTimeScale;
+        Vector3 m_PreviousScale;
+        Vector3 m_StartingCenter;
+        Vector3 m_PreviousPosition;
+        Quaternion m_PreviousRotation;
 
         void Awake()
         {
@@ -116,6 +120,8 @@ namespace Stella3D.SharedArray.Demo
                 DrawProfileMarker.End();
             }
 
+            // if the transform has changed, update transforms of drawn meshes
+            m_JobHandle = ScheduleTransformUpdateJobsIfNeeded();
             // schedule position calculation on odd frames, colors on even frames
             m_JobHandle = isOddFrame ? SchedulePositionNoiseJobs() : ScheduleColorJobs();
 
@@ -142,7 +148,7 @@ namespace Stella3D.SharedArray.Demo
 
         JobHandle ScheduleColorJobs()
         {
-            var actualScale = ColorScale * 0.001f;
+            var actualScale = ColorScale * (1f / 400f);
             var sinTime = actualScale * math.sin(Time.time * m_CycleTimeMultiplier * 0.5f);
 
             for (int i = 0; i < Colors.Length; i++)
@@ -155,9 +161,75 @@ namespace Stella3D.SharedArray.Demo
             
             return JobHandle.CombineDependencies(m_Handles);
         }
+
+
+        JobHandle ScheduleTransformUpdateJobsIfNeeded()
+        {
+            var trans = transform;
+            var newScale = trans.lossyScale;
+            var newPosition = trans.position;
+            var newRotation = trans.rotation;
+
+            var scaleChanged = m_PreviousScale != newScale;
+            var positionChanged = m_PreviousPosition != newPosition;
+            var rotationChanged = m_PreviousRotation != newRotation;
+
+            if (positionChanged)
+            {
+                var diffFromPrevious = newPosition - m_PreviousPosition;
+                for (int i = 0; i < Matrices.Length; i++)
+                {
+                    var matrices = Matrices[i];
+                    if (scaleChanged)
+                    {
+                        // the SharedArray<Matrix4x4, float4x4> 'array' is directly used as a NativeArray<Matrix4x4> with jobs
+                        var job = new TransformUpdateJob(matrices, newScale, diffFromPrevious);
+                        m_Handles[i] = job.Schedule(matrices.Length, m_JobHandle);
+                    }
+                    else
+                    {
+                        var job = new PositionUpdateJob(matrices, diffFromPrevious);
+                        m_Handles[i] = job.Schedule(matrices.Length, m_JobHandle);
+                    }
+                }
+
+                m_JobHandle = JobHandle.CombineDependencies(m_Handles);
+            }
+            else if (scaleChanged)   
+            {
+                for (int i = 0; i < Matrices.Length; i++)
+                {
+                    var matrices = Matrices[i];
+                    var job = new ScaleUpdateJob(matrices, newScale);
+                    m_Handles[i] = job.Schedule(matrices.Length, m_JobHandle);
+                }
+
+                m_JobHandle = JobHandle.CombineDependencies(m_Handles);
+            }
+            else if (rotationChanged)  
+            {
+                for (int i = 0; i < Matrices.Length; i++)
+                {
+                    var matrices = Matrices[i];
+                    var job = new OriginRotationUpdateJob(matrices, newScale, newRotation);
+                    m_Handles[i] = job.Schedule(matrices.Length, m_JobHandle);
+                }
+                
+                m_JobHandle = JobHandle.CombineDependencies(m_Handles);
+            }
+
+            m_PreviousScale = newScale;
+            m_PreviousPosition = newPosition;
+            m_PreviousRotation = newRotation;
+            return m_JobHandle;
+        }
         
         void Initialize()
         {
+            var trans = transform;
+            var position = trans.position;
+            
+            m_StartingCenter = position;
             m_CycleTimeMultiplier = 1f / CycleTimeScale;
             var wholeBatchCount = InstanceCount / instanceBatchSize;
             var remainder = InstanceCount % instanceBatchSize;
@@ -169,19 +241,19 @@ namespace Stella3D.SharedArray.Demo
             m_Handles = new NativeArray<JobHandle>(batchCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             PropertyBlocks = new MaterialPropertyBlock[batchCount];
 
-            var position = transform.position;
+            var scale = trans.lossyScale;
             // for each full batch of 1023
             for (int i = 0; i < wholeBatchCount; i++)
-                InitializeIndex(position, instanceBatchSize, i);
+                InitializeIndex(position, scale, instanceBatchSize, i);
             
             // the last batch, if the count isn't divisible by 1023
             if(remainder != 0)
-                InitializeIndex(position, remainder, batchCount - 1);
+                InitializeIndex(position, scale, remainder, batchCount - 1);
         }
 
-        void InitializeIndex(Vector3 center, int count, int index)
+        void InitializeIndex(Vector3 center, Vector3 scale, int count, int index)
         {
-            var matrices = RandomUtils.Matrices(center, count, index * 18f + 20f);
+            var matrices = RandomUtils.Matrices(center, scale, count, index * 18f + 20f);
             Matrices[index] = new SharedArray<Matrix4x4, float4x4>(matrices);
             var colors = new SharedArray<Vector4, float4>(RandomUtils.Colors(count));
             Colors[index] = colors;
@@ -207,6 +279,12 @@ namespace Stella3D.SharedArray.Demo
         }
         
         void OnDestroy()
+        {
+            if(!m_JobHandle.IsCompleted) m_JobHandle.Complete();
+            if (m_Handles.IsCreated) m_Handles.Dispose();
+        }
+
+        void OnDisable()
         {
             if(!m_JobHandle.IsCompleted) m_JobHandle.Complete();
             if (m_Handles.IsCreated) m_Handles.Dispose();
