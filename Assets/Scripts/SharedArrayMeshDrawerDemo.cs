@@ -48,15 +48,15 @@ namespace Stella3D.SharedArray.Demo
         [Header("Effect Scaling")]
         [Tooltip("Affects the strength of the noise")]
         [Range(0.35f, 35f)]
-        public float NoiseScale = 10;
+        public float NoiseScale = 10f;
 
         [Tooltip("Affects how far meshes move")]
-        [Range(0.02f, 2f)]
-        public float DistanceScale = 0.005f;
+        [Range(0.02f, 1.6f)]
+        public float DistanceScale = 0.5f;
         
         [Tooltip("Affects how much effect the color shifting has")]
-        [Range(0.1f, 2f)]
-        public float ColorScale = 0.0005f;
+        [Range(0.5f, 3f)]
+        public float ColorScale = 1f;
         
         [Tooltip("Affects how fast the time cycle goes by")]
         [Range(0.1f, 4f)]
@@ -181,7 +181,7 @@ namespace Stella3D.SharedArray.Demo
 
         void InitializeIndex(Vector3 center, int count, int index)
         {
-            var matrices = RandomUtils.Matrices(center, count, index * 20f + 20f);
+            var matrices = RandomUtils.Matrices(center, count, index * 18f + 20f);
             Matrices[index] = new SharedArray<Matrix4x4, float4x4>(matrices);
             var colors = new SharedArray<Vector4, float4>(RandomUtils.Colors(count));
             Colors[index] = colors;
