@@ -18,7 +18,8 @@ Arbitrary calculations for changing the position & color of mesh instances are p
 
 These are done on worker threads, in [C# jobs](https://docs.unity3d.com/Manual/JobSystem.html), using [Unity.Mathematics](https://github.com/Unity-Technologies/Unity.Mathematics) types & the [Burst compiler](https://docs.unity3d.com/Packages/com.unity.burst@1.1/manual/index.html).
 
-
 After the calculations are complete for a frame, we draw the updated mesh instances. 
 
-The same data / memory used in the calculation jobs is used as a normal array, as arguments to Unity methods like `Graphics.DrawMeshInstanced`.
+The same data / memory used in the calculation jobs is used as a normal array on the main thread, without copying.
+
+This is so we can use that data as arguments to Unity methods like `Graphics.DrawMeshInstanced` that take normal C# arrays.
