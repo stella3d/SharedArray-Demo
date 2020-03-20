@@ -55,7 +55,7 @@ namespace Stella3D.SharedArray.Demo
         public float DistanceScale = 0.005f;
         
         [Tooltip("Affects how much effect the color shifting has")]
-        [Range(0.2f, 2f)]
+        [Range(0.1f, 2f)]
         public float ColorScale = 0.0005f;
         
         [Tooltip("Affects how fast the time cycle goes by")]
