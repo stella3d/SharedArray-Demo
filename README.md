@@ -1,11 +1,13 @@
 # SharedArray Demo
 
-A Unity 2019.3 project that demonstrates the use of the [SharedArray library](https://github.com/stella3d/SharedArray).
+A Unity project that visually demonstrates the use of the [SharedArray library](https://github.com/stella3d/SharedArray).
 
 
 ![Thousands of randomly colored, bright cubes rendered in a layered sphere](readme_image.png)
 
 ## Running
+
+Clone this repo & open it as a project in Unity 2019.3+.
 
 To run the demo, open the `SharedArray Demo` scene, inspect the `Demo Mesh Drawer` object in the scene, and click ▶.
 
