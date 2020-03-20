@@ -3,27 +3,31 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-[BurstCompile]
-public struct ExampleNoiseJob : IJobFor, IJobParallelFor
+namespace Stella3D.SharedArray.Demo
 {
-    public NativeArray<float4x4> Matrices;
-
-    public float SinTime;
-    public float NoiseScale;
-
-    public ExampleNoiseJob(NativeArray<float4x4> matrices, float sinTime, float noiseScale)
+    
+    [BurstCompile]
+    public struct ExampleNoiseJob : IJobFor, IJobParallelFor
     {
-        Matrices = matrices;
-        SinTime = sinTime;
-        NoiseScale = noiseScale;
-    }
+        public NativeArray<float4x4> Matrices;
 
-    public void Execute(int i)
-    {
-        var m = Matrices[i];
-        var mc = m.c3;
-        var n = new float4(noise.srdnoise(mc.xy, mc.z) * NoiseScale, mc.w);
-        m.c3 = math.lerp(mc, n, SinTime);
-        Matrices[i] = m;
+        public float SinTime;
+        public float NoiseScale;
+
+        public ExampleNoiseJob(NativeArray<float4x4> matrices, float sinTime, float noiseScale)
+        {
+            Matrices = matrices;
+            SinTime = sinTime;
+            NoiseScale = noiseScale;
+        }
+
+        public void Execute(int i)
+        {
+            var m = Matrices[i];
+            var mc = m.c3;
+            var n = new float4(noise.srdnoise(mc.xy, mc.z) * NoiseScale, mc.w);
+            m.c3 = math.lerp(mc, n, SinTime);
+            Matrices[i] = m;
+        }
     }
 }

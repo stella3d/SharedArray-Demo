@@ -6,33 +6,42 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Stella3D
+namespace Stella3D.SharedArray.Demo
 {
     public class SharedArrayMeshDrawerDemo : MonoBehaviour
     {
         const int instanceBatchSize = 1023;
         static readonly int ColorShaderProperty = Shader.PropertyToID("_Color");
         static readonly ProfilerMarker DrawProfileMarker = new ProfilerMarker("Draw Mesh Instanced");
+        static readonly ProfilerMarker SetVectorArrayMarker = new ProfilerMarker("MaterialPropertyBlock.SetVectorArray");
         
+        [Header("Drawing Parameters")]
+        [Tooltip("The mesh to draw instances of")]
+        public Mesh Mesh;
+
+        [Tooltip("The material to draw the mesh with.\nMust support instancing!")]
+        public Material Material;
+
+        [Tooltip("Number of mesh instances to draw.\nNo effect after startup.\nIncrements of 1023")]
         [Range(instanceBatchSize, instanceBatchSize * 49)]
-        [Tooltip("The number of instances of the mesh to draw")]
         public int InstanceCount = instanceBatchSize * 4;
 
+        [Header("Effect Scaling")]
+        [Tooltip("Affects the strength of the noise")]
         [Range(0.25f, 25f)]
-        [Tooltip("The strength of the noise")]
         public float NoiseScale = 10;
 
-        [Range(0.0002f, 0.02f)] 
+        [Tooltip("Affects how far meshes move")]
+        [Range(0.0002f, 0.02f)]
         public float DistanceScale = 0.005f;
         
-        [Range(0.001f, 0.01f)] 
+        [Tooltip("Affects how much effect the color shifting has")]
+        [Range(0.001f, 0.01f)]
         public float ColorScale = 0.004f;
         
-        [Range(0.05f, 2f)] 
+        [Tooltip("Affects how fast the time cycle goes by")]
+        [Range(0.05f, 2f)]
         public float CycleTimeScale = 0.25f;
-        
-        public Material Material;
-        public Mesh Mesh;
 
         /* for every instance of a mesh drawn with the instanced drawer,
            we need a Matrix4x4 and Color (from UnityEngine).
@@ -74,25 +83,31 @@ namespace Stella3D
             // this will make the data safe to read and write according to Unity's job safety system
             m_JobHandle.Complete();
             
-            DrawProfileMarker.Begin();
             var isEvenFrame = Time.frameCount % 2 == 0;
 
             // draw using the newly updated data from jobs
             for (int i = 0; i < m_PropertyBlocks.Length; i++)
             {
                 var block = m_PropertyBlocks[i];
-                // implicit conversion from ManagedNativeArray<T> to T[] performs a
-                // read and write safety check, ensuring that no job is reading or writing to the data
+
                 if (!isEvenFrame)
+                {
+                    SetVectorArrayMarker.Begin();
+                    // implicit conversion from SharedArray<Vector4, float4> to Vector4[] in the 2nd argument
+                    // performs a safety check, ensuring that no job is reading or writing to the data
                     block.SetVectorArray(ColorShaderProperty, Colors[i]);
+                    SetVectorArrayMarker.End();
+                }
 
                 var matrices = Matrices[i];
-                // The same data used in jobs as a NativeArray<float4> is used as a Vector4[] here
-                Graphics.DrawMeshInstanced(Mesh, 0, Material, matrices, matrices.Length, block, 
-                    ShadowCastingMode.Off, false);
+
+                DrawProfileMarker.Begin();
+                // The same SharedArray used in the 'position noise' jobs as a NativeArray<float4x4> 
+                // is used implicitly as a Matrix4x4[] here in the method arguments
+                Graphics.DrawMeshInstanced(Mesh, 0, Material, matrices, matrices.Length, block, ShadowCastingMode.Off, false);
+                DrawProfileMarker.End();
             }
 
-            DrawProfileMarker.End();
             // even frames, update colors, odd frames update positions
             m_JobHandle = isEvenFrame ? ScheduleColorJobs() : SchedulePositionNoiseJobs();
             // if you try to access the managed array representation of the ManagedNativeArray here,
@@ -106,9 +121,9 @@ namespace Stella3D
             for (int i = 0; i < Matrices.Length; i++)
             {
                 var array = Matrices[i];
-                // the ManagedNativeArray<Matrix4x4> 'array' is directly used as a NativeArray<Matrix4x4> with jobs
+                // the SharedArray<Matrix4x4, float4x4> 'array' is directly used as a NativeArray<Matrix4x4> with jobs
                 var job = new ExampleNoiseJob(array, sinTime, NoiseScale);
-                m_Handles[i] = job.Schedule(array.Length, m_JobHandle);
+                m_Handles[i] = job.Schedule(array.Length, 512, m_JobHandle);
             }
 
             return JobHandle.CombineDependencies(m_Handles);
@@ -121,9 +136,9 @@ namespace Stella3D
             for (int i = 0; i < Colors.Length; i++)
             {
                 var colors = Colors[i];
-                // the ManagedNativeArray<Color> 'colors' is directly used as a NativeArray<Color> with jobs
+                // the SharedArray<Vector4, float4> 'colors' is directly used as a NativeArray<float4> with jobs
                 var job = new ColorShiftJob(colors, sinTime);
-                m_Handles[i] = job.Schedule(colors.Length, m_JobHandle);
+                m_Handles[i] = job.Schedule(colors.Length, 512, m_JobHandle);
             }
             
             return JobHandle.CombineDependencies(m_Handles);
@@ -140,19 +155,20 @@ namespace Stella3D
             
             m_Handles = new NativeArray<JobHandle>(batchCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             m_PropertyBlocks = new MaterialPropertyBlock[batchCount];
-            
+
+            var position = transform.position;
             // for each full batch of 1023
             for (int i = 0; i < wholeBatchCount; i++)
-                InitializeIndex(instanceBatchSize, i);
+                InitializeIndex(position, instanceBatchSize, i);
             
             // the last batch, if the count isn't divisible by 1023
             if(remainder != 0)
-                InitializeIndex(remainder, batchCount - 1);
+                InitializeIndex(position, remainder, batchCount - 1);
         }
 
-        void InitializeIndex(int count, int index)
+        void InitializeIndex(Vector3 center, int count, int index)
         {
-            var matrices = Utils.RandomMatrices(count, index * 10f + 12f);
+            var matrices = Utils.RandomMatrices(center, count, index * 10f + 12f);
             Matrices[index] = new SharedArray<Matrix4x4, float4x4>(matrices);
             var colors = new SharedArray<Vector4, float4>(Utils.RandomColors(count));
             Colors[index] = colors;
@@ -161,7 +177,7 @@ namespace Stella3D
             block.SetVectorArray(ColorShaderProperty, colors);
             m_PropertyBlocks[index] = block;
         }
-        
+
         void OnValidate()
         {
             // align instance count to max batch size for DrawMeshInstanced
@@ -177,4 +193,3 @@ namespace Stella3D
         }
     }
 }
-

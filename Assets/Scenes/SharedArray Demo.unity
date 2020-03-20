@@ -130,9 +130,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 128109830}
+  - component: {fileID: 128109831}
   - component: {fileID: 128109829}
   m_Layer: 0
-  m_Name: Drawer
+  m_Name: Demo Mesh Drawer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -150,13 +151,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da6df4c7f76d1cf45a6070890ec1a7e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InstanceCount: 4092
-  NoiseScale: 20.9
-  DistanceScale: 0.006
+  Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  Material: {fileID: 2100000, guid: 43bfaaca72a44d6429f99328bfa2c16a, type: 2}
+  InstanceCount: 8184
+  NoiseScale: 13.5
+  DistanceScale: 0.0026
   ColorScale: 0.00313
   CycleTimeScale: 0.25
-  Material: {fileID: 2100000, guid: 43bfaaca72a44d6429f99328bfa2c16a, type: 2}
-  Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!4 &128109830
 Transform:
   m_ObjectHideFlags: 0
@@ -171,6 +172,27 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &128109831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 128109828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9e2ff9ec5ab9b645acc97cd9086b814, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Description: "This demo shows how to use SharedArray, and what sort of situation
+    it is most useful in.  \n\nData is manipulated inside jobs on worker threads,
+    using Unity.Mathematics types & the Burst compiler.\n  \nThis same data is then
+    referenced as a regular c# array on the main thread, and used with two different 
+    Unity APIs.\n\n1) SharedArray<Vector4, float4> \nused with MaterialPropertyBlock.SetVectorArray(),
+    \nwhich takes Vector4[].\n\n2) SharedArray<Matrix4x4, float4x4> \nused with Graphics.DrawMeshInstanced,
+    \nwhich takes Matrix4x4[].\n\nThe pattern shown here is the primary intended
+    use case for SharedArray:\n\n1) write data in jobs \n2) read on the main thread
+    as a normal array"
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -272,8 +294,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 963194228}
-  - component: {fileID: 963194227}
   - component: {fileID: 963194226}
+  - component: {fileID: 963194227}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -317,7 +339,7 @@ Camera:
   field of view: 60
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -339,10 +361,10 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: -0.10356401, y: 0.7375167, z: -0.11622711, w: -0.65714145}
-  m_LocalPosition: {x: 52.696106, y: 16.922379, z: 6.041374}
+  m_LocalRotation: {x: -0.13145742, y: 0.7142582, z: -0.13371192, w: -0.67429614}
+  m_LocalPosition: {x: 123.3, y: 44.7, z: 4.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 21.61, y: -93.385, z: -0.46}

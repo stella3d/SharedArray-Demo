@@ -3,12 +3,12 @@ using Random = UnityEngine.Random;
 
 public static class Utils
 {
-    public static Matrix4x4[] RandomMatrices(int count, float scale = 15f)
+    public static Matrix4x4[] RandomMatrices(Vector3 center, int count, float scale = 15f)
     {
         var matrices = new Matrix4x4[count];
         for (int i = 0; i < matrices.Length; i++)
         {
-            var pos = Random.onUnitSphere * scale;
+            var pos = center + Random.onUnitSphere * scale;
             var rotation = Quaternion.LookRotation(pos, Vector3.up);
             matrices[i] = Matrix4x4.TRS(pos, rotation, Vector3.one);
         }
