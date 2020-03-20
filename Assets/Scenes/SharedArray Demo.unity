@@ -153,11 +153,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   Material: {fileID: 2100000, guid: 43bfaaca72a44d6429f99328bfa2c16a, type: 2}
-  InstanceCount: 8184
-  NoiseScale: 13.5
-  DistanceScale: 0.0026
-  ColorScale: 0.00313
-  CycleTimeScale: 0.25
+  InstanceCount: 4092
+  NoiseScale: 15
+  DistanceScale: 0.003
+  ColorScale: 0.003
+  CycleTimeScale: 0.4
 --- !u!4 &128109830
 Transform:
   m_ObjectHideFlags: 0
