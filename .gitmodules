@@ -1,6 +1,3 @@
 [submodule "Assets/Instancer/Scripts/SharedArray"]
 	path = Assets/Instancer/Scripts/SharedArray
 	url = git@github.com:stella3d/SharedArray.git
-[submodule "Assets/SharedArray"]
-	path = Assets/SharedArray
-	url = git@github.com:stella3d/SharedArray.git
