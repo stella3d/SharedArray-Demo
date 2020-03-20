@@ -1,6 +1,7 @@
 # SharedArray Demo
 
-A Unity project that visually demonstrates the use of the [SharedArray library](https://github.com/stella3d/SharedArray).
+A Unity project that visually demonstrates the use of the [SharedArray library](https://github.com/stella3d/SharedArray), 
+to achieve more efficient integration with Unity's C# job system and newer math types.
 
 
 ![Thousands of randomly colored, bright cubes rendered in a layered sphere](readme_image.png)
