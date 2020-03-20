@@ -47,7 +47,7 @@ namespace Stella3D.SharedArray.Demo
 
         [Header("Effect Scaling")]
         [Tooltip("Affects the strength of the noise")]
-        [Range(0.25f, 25f)]
+        [Range(0.35f, 35f)]
         public float NoiseScale = 10;
 
         [Tooltip("Affects how far meshes move")]
@@ -59,8 +59,8 @@ namespace Stella3D.SharedArray.Demo
         public float ColorScale = 0.0005f;
         
         [Tooltip("Affects how fast the time cycle goes by")]
-        [Range(0.05f, 2f)]
-        public float CycleTimeScale = 0.25f;
+        [Range(0.1f, 4f)]
+        public float CycleTimeScale = 2f;
         
         const int instanceBatchSize = 1023;
         static readonly int ColorShaderProperty = Shader.PropertyToID("_Color");
@@ -143,7 +143,7 @@ namespace Stella3D.SharedArray.Demo
         JobHandle ScheduleColorJobs()
         {
             var actualScale = ColorScale * 0.001f;
-            var sinTime = actualScale * math.cos(Time.time * m_CycleTimeMultiplier * 0.5f);
+            var sinTime = actualScale * math.sin(Time.time * m_CycleTimeMultiplier * 0.5f);
 
             for (int i = 0; i < Colors.Length; i++)
             {
@@ -181,7 +181,7 @@ namespace Stella3D.SharedArray.Demo
 
         void InitializeIndex(Vector3 center, int count, int index)
         {
-            var matrices = RandomUtils.Matrices(center, count, index * 10f + 18f);
+            var matrices = RandomUtils.Matrices(center, count, index * 20f + 20f);
             Matrices[index] = new SharedArray<Matrix4x4, float4x4>(matrices);
             var colors = new SharedArray<Vector4, float4>(RandomUtils.Colors(count));
             Colors[index] = colors;

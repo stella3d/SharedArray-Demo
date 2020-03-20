@@ -153,11 +153,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   Material: {fileID: 2100000, guid: 674bc1ba2fd617543b7f1bd8274097ca, type: 2}
-  InstanceCount: 8184
-  NoiseScale: 20
-  DistanceScale: 0.5
+  InstanceCount: 4092
+  NoiseScale: 25
+  DistanceScale: 0.9
   ColorScale: 0.2
-  CycleTimeScale: 0.8
+  CycleTimeScale: 2.5
 --- !u!4 &128109830
 Transform:
   m_ObjectHideFlags: 0
@@ -362,7 +362,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: -0.070517346, y: 0.7228231, z: -0.07614688, w: -0.68319523}
-  m_LocalPosition: {x: 123.3, y: 18.2, z: 4.6}
+  m_LocalPosition: {x: 168, y: 37.51, z: 4.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
