@@ -32,12 +32,12 @@ namespace Stella3D.SharedArray.Demo
         public float NoiseScale = 10;
 
         [Tooltip("Affects how far meshes move")]
-        [Range(0.0002f, 0.02f)]
+        [Range(0.02f, 2f)]
         public float DistanceScale = 0.005f;
         
         [Tooltip("Affects how much effect the color shifting has")]
-        [Range(0.001f, 0.005f)]
-        public float ColorScale = 0.004f;
+        [Range(0.2f, 2f)]
+        public float ColorScale = 0.0005f;
         
         [Tooltip("Affects how fast the time cycle goes by")]
         [Range(0.05f, 2f)]
@@ -116,13 +116,14 @@ namespace Stella3D.SharedArray.Demo
 
         JobHandle SchedulePositionNoiseJobs()
         {
-            var sinTime = DistanceScale * math.sin(Time.time * CycleTimeScale);
+            var actualScale = DistanceScale * 0.01f;
+            var sinTime = actualScale * math.sin(Time.time * CycleTimeScale);
             
             for (int i = 0; i < Matrices.Length; i++)
             {
                 var array = Matrices[i];
                 // the SharedArray<Matrix4x4, float4x4> 'array' is directly used as a NativeArray<Matrix4x4> with jobs
-                var job = new ExampleNoiseJob(array, sinTime, NoiseScale);
+                var job = new PositionNoiseJob(array, sinTime, NoiseScale);
                 m_Handles[i] = job.Schedule(array.Length, 512, m_JobHandle);
             }
 
@@ -131,7 +132,8 @@ namespace Stella3D.SharedArray.Demo
 
         JobHandle ScheduleColorJobs()
         {
-            var sinTime = ColorScale * math.cos(Time.time * CycleTimeScale * 0.5f);
+            var actualScale = ColorScale * 0.001f;
+            var sinTime = actualScale * math.cos(Time.time * CycleTimeScale * 0.5f);
 
             for (int i = 0; i < Colors.Length; i++)
             {
@@ -168,9 +170,9 @@ namespace Stella3D.SharedArray.Demo
 
         void InitializeIndex(Vector3 center, int count, int index)
         {
-            var matrices = Utils.RandomMatrices(center, count, index * 10f + 18f);
+            var matrices = RandomUtils.Matrices(center, count, index * 10f + 18f);
             Matrices[index] = new SharedArray<Matrix4x4, float4x4>(matrices);
-            var colors = new SharedArray<Vector4, float4>(Utils.RandomColors(count));
+            var colors = new SharedArray<Vector4, float4>(RandomUtils.Colors(count));
             Colors[index] = colors;
             
             var block = new MaterialPropertyBlock();
