@@ -18,13 +18,13 @@ namespace Stella3D.SharedArray.Demo
            
            On the main thread, we want to access the data as a Matrix4x4[] or Color[].   
 
-           To do this without any overhead for copying or casting, we "alias" the memory for a SharedArray 
-           as a NativeArray of a different struct type, of the same size.
-           
-           We alias 'UnityEngine.Vector4' to its analog 'Unity.Mathematics.float4', 
-           and 'UnityEngine.Matrix4x4' to its analog 'Unity.Mathematics.float4x4'. 
+           To do this without copy/casting overhead, we "alias" a SharedArray's memory as a NativeArray
+           of a different struct type, of the same size.
+
+           'UnityEngine.Vector4[]' <-> 'NativeArray<Unity.Mathematics.float4>', 
+           'UnityEngine.Matrix4x4[]' <-> 'NativeArray<Unity.Mathematics.float4x4>'. 
         */
-        
+
         /// <summary>Transform matrix for every mesh instance, 1023 per array</summary>
         public SharedArray<Matrix4x4, float4x4>[] Matrices;
         
