@@ -151,12 +151,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da6df4c7f76d1cf45a6070890ec1a7e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  Mesh: {fileID: 4300000, guid: c17b63ac35296224eb542145b22af008, type: 2}
   Material: {fileID: 2100000, guid: 674bc1ba2fd617543b7f1bd8274097ca, type: 2}
   InstanceCount: 4092
   NoiseScale: 22
   DistanceScale: 0.75
-  ColorScale: 1
+  ColorScale: 1.2
   CycleTimeScale: 2.8
 --- !u!4 &128109830
 Transform:
@@ -190,9 +190,10 @@ MonoBehaviour:
     is then referenced as a regular c# array on the main thread, and used with two
     different Unity graphics APIs.\n\n1) SharedArray<Vector4, float4> \nused with
     MaterialPropertyBlock.SetVectorArray(), \nwhich takes Vector4[].\n\n2) SharedArray<Matrix4x4,
-    float4x4> \nused with Graphics.DrawMeshInstanced, \nwhich takes Matrix4x4[].\n\nThe
-    pattern shown here is the primary intended use case for SharedArray:\n\n1) write
-    data in jobs \n2) read on the main thread as a normal array"
+    float4x4> \nused with Graphics.DrawMeshInstanced, \nwhich takes Matrix4x4[].\n\nTry
+    playing with the scale controls on the script, or with the transform scale &
+    position!\n\nThe pattern shown here is the primary intended use case for SharedArray:\n\n1)
+    write data in jobs \n2) read on the main thread as a normal array"
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
