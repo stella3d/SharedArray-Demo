@@ -1,9 +1,9 @@
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public static class Utils
+static class RandomUtils
 {
-    public static Matrix4x4[] RandomMatrices(Vector3 center, int count, float scale = 15f)
+    public static Matrix4x4[] Matrices(Vector3 center, int count, float scale = 15f)
     {
         var matrices = new Matrix4x4[count];
         for (int i = 0; i < matrices.Length; i++)
@@ -16,7 +16,7 @@ public static class Utils
         return matrices;
     }
     
-    public static Vector4[] RandomColors(int count)
+    public static Vector4[] Colors(int count)
     {
         var colors = new Vector4[count];
         for (int i = 0; i < colors.Length; i++)
