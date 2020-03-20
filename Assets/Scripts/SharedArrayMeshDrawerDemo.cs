@@ -10,12 +10,31 @@ namespace Stella3D.SharedArray.Demo
 {
     public class SharedArrayMeshDrawerDemo : MonoBehaviour
     {
-        const int instanceBatchSize = 1023;
-        static readonly int ColorShaderProperty = Shader.PropertyToID("_Color");
-        static readonly ProfilerMarker DrawProfileMarker = new ProfilerMarker("Draw Mesh Instanced");
-        static readonly ProfilerMarker SetVectorArrayMarker = new ProfilerMarker("MaterialPropertyBlock.SetVectorArray");
+        /*
+           For every mesh instance to draw, we have a Matrix4x4 and Color
+           
+           In c# jobs, we want to take advantage of Unity.Mathematics optimizations in Burst,
+           by working only with the math types in that namespace.
+           
+           On the main thread, we want to access the data as a Matrix4x4[] or Color[].   
+
+           To do this without any overhead for copying or casting, we "alias" the memory for a SharedArray 
+           as a NativeArray of a different struct type, of the same size.
+           
+           We alias 'UnityEngine.Vector4' to its analog 'Unity.Mathematics.float4', 
+           and 'UnityEngine.Matrix4x4' to its analog 'Unity.Mathematics.float4x4'. 
+        */
         
-        [Header("Drawing Parameters")]
+        /// <summary>Transform matrix for every mesh instance, 1023 per array</summary>
+        public SharedArray<Matrix4x4, float4x4>[] Matrices;
+        
+        /// <summary>Color for every mesh instance, 1023 per array</summary>
+        public SharedArray<Vector4, float4>[] Colors;
+
+        /// <summary>MaterialPropertyBlock for every mesh instance, 1023 per array</summary>
+        public MaterialPropertyBlock[] PropertyBlocks;
+                
+        [Header("Mesh Parameters")]
         [Tooltip("The mesh to draw instances of")]
         public Mesh Mesh;
 
@@ -42,21 +61,13 @@ namespace Stella3D.SharedArray.Demo
         [Tooltip("Affects how fast the time cycle goes by")]
         [Range(0.05f, 2f)]
         public float CycleTimeScale = 0.25f;
+        
+        const int instanceBatchSize = 1023;
+        static readonly int ColorShaderProperty = Shader.PropertyToID("_Color");
+        static readonly ProfilerMarker DrawProfileMarker = new ProfilerMarker("Draw Mesh Instanced");
 
-        /* for every instance of a mesh drawn with the instanced drawer,
-           we need a Matrix4x4 and Color (from UnityEngine).
-           
-           We want to manipulate these values inside a C# job, before using in graphics APIs that take a regular array.
-           
-           In jobs, we want to take advantage of Unity.Mathematics optimizations by working only with those types.
-           
-           The second type argument to each array is the type to create the NativeArray representation as. 
-           this allows aliasing to element types that are the same size as the source type.
-        */
-        public SharedArray<Matrix4x4, float4x4>[] Matrices;
-        public SharedArray<Vector4, float4>[] Colors;
-
-        MaterialPropertyBlock[] m_PropertyBlocks;
+        float m_CycleTimeMultiplier;
+        float m_PreviousCycleTimeScale;
         
         JobHandle m_JobHandle;
         NativeArray<JobHandle> m_Handles;
@@ -80,44 +91,43 @@ namespace Stella3D.SharedArray.Demo
         void Update()
         {
             // complete all jobs scheduled at the end of the previous Update()
-            // this will make the data safe to read and write according to Unity's job safety system
+            // this will make the data safe to read and write, according to Unity's job safety system
             m_JobHandle.Complete();
             
-            var isEvenFrame = Time.frameCount % 2 == 0;
-
+            var isOddFrame = Time.frameCount % 2 != 0;
             // draw using the newly updated data from jobs
-            for (int i = 0; i < m_PropertyBlocks.Length; i++)
+            for (int i = 0; i < PropertyBlocks.Length; i++)
             {
-                var block = m_PropertyBlocks[i];
-
-                if (!isEvenFrame)
+                var block = PropertyBlocks[i];
+                if (isOddFrame)
                 {
-                    SetVectorArrayMarker.Begin();
-                    // implicit conversion from SharedArray<Vector4, float4> to Vector4[] in the 2nd argument
-                    // performs a safety check, ensuring that no job is reading or writing to the data
-                    block.SetVectorArray(ColorShaderProperty, Colors[i]);
-                    SetVectorArrayMarker.End();
+                    // Implicit conversion from SharedArray<Vector4, float4> to Vector4[]
+                    // In the editor, this cast does a safety check, ensuring no job is reading/writing the memory
+                    Vector4[] colors = Colors[i];
+                    block.SetVectorArray(ColorShaderProperty, colors);
                 }
 
-                var matrices = Matrices[i];
+                SharedArray<Matrix4x4, float4x4> matrices = Matrices[i];
 
                 DrawProfileMarker.Begin();
-                // The same SharedArray used in the 'position noise' jobs as a NativeArray<float4x4> 
-                // is used implicitly as a Matrix4x4[] here in the method arguments
+                // SharedArrays used in position calculation jobs as NativeArray<float4x4>
+                // are used implicitly as Matrix4x4[] here
                 Graphics.DrawMeshInstanced(Mesh, 0, Material, matrices, matrices.Length, block, ShadowCastingMode.Off, false);
                 DrawProfileMarker.End();
             }
 
-            // even frames, update colors, odd frames update positions
-            m_JobHandle = isEvenFrame ? ScheduleColorJobs() : SchedulePositionNoiseJobs();
-            // if you try to access the managed array representation of the ManagedNativeArray here,
-            // after jobs are scheduled, an exception is thrown because uncompleted jobs are writing to the data
+            // schedule position calculation on odd frames, colors on even frames
+            m_JobHandle = isOddFrame ? SchedulePositionNoiseJobs() : ScheduleColorJobs();
+
+            // If in editor / using safety system:
+            // if you tried to cast any of the SharedArrays in 'Matrices' or 'Colors' to a plain array here,
+            // an exception would be thrown - because uncompleted jobs have been scheduled that read and write the data.
         }
 
         JobHandle SchedulePositionNoiseJobs()
         {
             var actualScale = DistanceScale * 0.01f;
-            var sinTime = actualScale * math.sin(Time.time * CycleTimeScale);
+            var sinTime = actualScale * math.sin(Time.time * m_CycleTimeMultiplier);
             
             for (int i = 0; i < Matrices.Length; i++)
             {
@@ -133,7 +143,7 @@ namespace Stella3D.SharedArray.Demo
         JobHandle ScheduleColorJobs()
         {
             var actualScale = ColorScale * 0.001f;
-            var sinTime = actualScale * math.cos(Time.time * CycleTimeScale * 0.5f);
+            var sinTime = actualScale * math.cos(Time.time * m_CycleTimeMultiplier * 0.5f);
 
             for (int i = 0; i < Colors.Length; i++)
             {
@@ -147,7 +157,8 @@ namespace Stella3D.SharedArray.Demo
         }
         
         void Initialize()
-        { 
+        {
+            m_CycleTimeMultiplier = 1f / CycleTimeScale;
             var wholeBatchCount = InstanceCount / instanceBatchSize;
             var remainder = InstanceCount % instanceBatchSize;
             var batchCount = remainder == 0 ? wholeBatchCount : wholeBatchCount + 1;
@@ -156,7 +167,7 @@ namespace Stella3D.SharedArray.Demo
             Colors = new SharedArray<Vector4, float4>[batchCount];
             
             m_Handles = new NativeArray<JobHandle>(batchCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            m_PropertyBlocks = new MaterialPropertyBlock[batchCount];
+            PropertyBlocks = new MaterialPropertyBlock[batchCount];
 
             var position = transform.position;
             // for each full batch of 1023
@@ -177,7 +188,7 @@ namespace Stella3D.SharedArray.Demo
             
             var block = new MaterialPropertyBlock();
             block.SetVectorArray(ColorShaderProperty, colors);
-            m_PropertyBlocks[index] = block;
+            PropertyBlocks[index] = block;
         }
 
         void OnValidate()
@@ -186,6 +197,13 @@ namespace Stella3D.SharedArray.Demo
             var remainder = InstanceCount % instanceBatchSize;
             if (remainder != 0)
                 InstanceCount -= remainder;
+
+            // keep cycle time multiplier updated if inspector changes value
+            if (m_PreviousCycleTimeScale != CycleTimeScale)
+            {
+                m_CycleTimeMultiplier = 1f / CycleTimeScale;
+                m_PreviousCycleTimeScale = CycleTimeScale;
+            }
         }
         
         void OnDestroy()
