@@ -5,9 +5,9 @@ A Unity 2019.3 project that demonstrates the use of the [SharedArray library](ht
 
 ![Thousands of randomly colored, bright cubes rendered in a layered sphere](readme_image.png)
 
-## Scene
+## Running
 
-To run the demo, open the `SharedArray Demo` scene.
+To run the demo, open the `SharedArray Demo` scene, inspect the `Demo Mesh Drawer` object in the scene, and click ▶.
 
 
 ### What It Does
