@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace Stella3D.SharedArray.Demo
+namespace Stella3D.Demo
 {
     [BurstCompile]
     public struct PositionNoiseJob : IJobFor, IJobParallelFor

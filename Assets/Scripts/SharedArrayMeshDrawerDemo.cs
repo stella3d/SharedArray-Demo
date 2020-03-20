@@ -6,7 +6,7 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Stella3D.SharedArray.Demo
+namespace Stella3D.Demo
 {
     public class SharedArrayMeshDrawerDemo : MonoBehaviour
     {
@@ -188,7 +188,7 @@ namespace Stella3D.SharedArray.Demo
                     }
                     else
                     {
-                        var job = new PositionUpdateJob(matrices, diffFromPrevious);
+                        var job = new TranslatePositionJob(matrices, diffFromPrevious);
                         m_Handles[i] = job.Schedule(matrices.Length, m_JobHandle);
                     }
                 }
@@ -206,12 +206,13 @@ namespace Stella3D.SharedArray.Demo
 
                 m_JobHandle = JobHandle.CombineDependencies(m_Handles);
             }
-            else if (rotationChanged)  
+            else if (rotationChanged)
             {
+                var rotationDiff = m_PreviousRotation * newRotation;
                 for (int i = 0; i < Matrices.Length; i++)
                 {
                     var matrices = Matrices[i];
-                    var job = new OriginRotationUpdateJob(matrices, newScale, newRotation);
+                    var job = new OriginRotationUpdateJob(matrices, newScale, rotationDiff);
                     m_Handles[i] = job.Schedule(matrices.Length, m_JobHandle);
                 }
                 
@@ -259,6 +260,7 @@ namespace Stella3D.SharedArray.Demo
             Colors[index] = colors;
             
             var block = new MaterialPropertyBlock();
+            Debug.Log($"index {index} - block pointer: {block.GetPointer()}");
             block.SetVectorArray(ColorShaderProperty, colors);
             PropertyBlocks[index] = block;
         }

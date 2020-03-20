@@ -1,4 +1,3 @@
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
@@ -6,7 +5,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Stella3D.SharedArray.Demo
+namespace Stella3D.Demo
 {
     [BurstCompile]
     public struct TransformUpdateJob : IJobFor, IJobParallelFor
@@ -29,6 +28,7 @@ namespace Stella3D.SharedArray.Demo
         }
     }
     
+    // this job does not really set the rotation correctly but it's wrong in a way that looks cooler than being right
     [BurstCompile]
     public struct OriginRotationUpdateJob : IJobFor, IJobParallelFor
     {
@@ -54,44 +54,6 @@ namespace Stella3D.SharedArray.Demo
             var position = new float3(p.x, p.y, p.z);
             var rotation = OriginRotation * quaternion.LookRotation(position, Up);
             Matrices[i] = float4x4.TRS(position, rotation, Scale);
-        }
-    }
-    
-    [BurstCompile]
-    public struct ScaleUpdateJob : IJobFor, IJobParallelFor
-    {
-        public NativeArray<float4x4> Matrices;
-
-        public readonly float3 Scale;
-
-        public ScaleUpdateJob(NativeArray<float4x4> matrices, float3 scale)
-        {
-            Matrices = matrices;
-            Scale = scale;
-        }
-    
-        public void Execute(int i)
-        {
-            Matrices[i] = Matrices[i].Scaled(Scale);
-        }
-    }
-    
-    [BurstCompile]
-    public struct PositionUpdateJob : IJobFor, IJobParallelFor
-    {
-        public NativeArray<float4x4> Matrices;
-
-        public readonly float4 CenterDifferenceFromLast;
-
-        public PositionUpdateJob(NativeArray<float4x4> matrices, float3 centerDifferenceFromLast)
-        {
-            Matrices = matrices;
-            CenterDifferenceFromLast = new float4(centerDifferenceFromLast, 0f);
-        }
-    
-        public void Execute(int i)
-        {
-            Matrices[i] = Matrices[i].TranslatePosition(CenterDifferenceFromLast);
         }
     }
 

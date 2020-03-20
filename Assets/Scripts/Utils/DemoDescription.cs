@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Stella3D.SharedArray.Demo
+namespace Stella3D.Demo
 {
     public class DemoDescription : MonoBehaviour
     {
