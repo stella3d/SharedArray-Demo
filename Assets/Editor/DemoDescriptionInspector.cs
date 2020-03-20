@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace Stella3D.SharedArray.Demo
+namespace Stella3D.Demo
 {
     [CustomEditor(typeof(DemoDescription))]
     public class DemoDescriptionInspector : Editor

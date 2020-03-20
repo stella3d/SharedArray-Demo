@@ -1,6 +1,7 @@
+using Stella3D.Demo;
 using UnityEditor;
 
-namespace Stella3D.SharedArray.Demo
+namespace Stella3D.Demo
 {
     [CustomEditor(typeof(SharedArrayMeshDrawerDemo))]
     public class SharedArrayMeshDrawerInspector : Editor
