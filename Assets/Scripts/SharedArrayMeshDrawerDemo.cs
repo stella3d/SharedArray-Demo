@@ -260,7 +260,6 @@ namespace Stella3D.Demo
             Colors[index] = colors;
             
             var block = new MaterialPropertyBlock();
-            Debug.Log($"index {index} - block pointer: {block.GetPointer()}");
             block.SetVectorArray(ColorShaderProperty, colors);
             PropertyBlocks[index] = block;
         }
